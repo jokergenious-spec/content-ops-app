@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Content Ops</title>
+<meta name="theme-color" content="#111219" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Content Ops" />
+<link rel="icon" href="icon.svg" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="manifest" href="manifest.json" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #111219; color: #E9E8EC; font-family: 'Inter', -apple-system, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .display { font-family: 'Space Grotesk', sans-serif; }
+  button, select, input, textarea { font-family: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #6C7BFF; outline-offset: 2px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #2A2C38; border-radius: 4px; }
+  a { color: #6C7BFF; }
+
+  #app { padding-bottom: 76px; min-height: 100vh; }
+  .header { border-bottom: 1px solid #23252F; padding: 18px 18px 14px; position: sticky; top: 0; background: #111219; z-index: 10; }
+  .header-title { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-sub { font-size: 11px; color: #7A7D8C; margin-top: 3px; }
+  .pulse-row { display: flex; gap: 14px; margin-top: 10px; background: #181A22; border: 1px solid #23252F; border-radius: 10px; padding: 8px 12px; width: fit-content; }
+  .pulse-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #C7C8D3; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+
+  .content { padding: 16px; max-width: 720px; margin: 0 auto; }
+
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #181A22; border-top: 1px solid #23252F; padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
+  .nav-btn { flex: 1; background: none; border: none; color: #7A7D8C; padding: 12px 0 10px; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .nav-btn.active { color: #6C7BFF; }
+
+  .card { background: #181A22; border: 1px solid #23252F; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: #181A22; border: 1px solid #23252F; border-radius: 12px; padding: 12px; }
+  .stat-num { font-size: 22px; font-weight: 700; }
+  .stat-label { font-size: 10px; color: #7A7D8C; margin-top: 2px; }
+
+  .bar-track { height: 8px; background: #23252F; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width .3s; }
+
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #23252F; font-size: 13px; }
+  .row:first-child { border-top: none; }
+
+  .filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  select, .field-input, textarea.field-input { background: #20222C; color: #E9E8EC; border: 1px solid #2A2C38; border-radius: 8px; padding: 9px 10px; font-size: 13px; width: 100%; }
+  select.filter-select { width: auto; background: #181A22; border-color: #23252F; padding: 8px 10px; }
+
+  .fab { position: fixed; bottom: 88px; right: 18px; background: #6C7BFF; color: #fff; border: none; width: 52px; height: 52px; border-radius: 999px; font-size: 26px; box-shadow: 0 6px 18px rgba(108,123,255,0.4); z-index: 20; }
+
+  .post-item { background: #181A22; border: 1px solid #23252F; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+  .post-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .post-title { font-size: 14px; }
+  .post-meta { font-size: 11px; color: #7A7D8C; margin-top: 2px; }
+  .post-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px; }
+  .status-select { font-size: 12px; padding: 5px 8px; border-radius: 6px; background: #20222C; }
+  .icon-btn { background: none; border: none; color: #7A7D8C; padding: 4px; }
+
+  .acct-group-title { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px; font-weight: 600; font-size: 14px; }
+  .acct-list { display: flex; flex-direction: column; gap: 6px; }
+  .acct-item { background: #181A22; border: 1px solid #23252F; border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+
+  .empty { border: 1px dashed #2A2C38; border-radius: 12px; padding: 30px 16px; text-align: center; color: #7A7D8C; font-size: 13px; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(8,9,13,0.75); display: flex; align-items: flex-end; justify-content: center; z-index: 50; }
+  .modal { background: #181A22; border: 1px solid #2A2C38; border-radius: 16px 16px 0 0; padding: 20px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .field { margin-bottom: 12px; }
+  .field-label { font-size: 12px; color: #9A9CAB; margin-bottom: 5px; }
+  .btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+  .btn-primary { background: #6C7BFF; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; }
+  .btn-secondary { background: none; border: 1px solid #2A2C38; color: #C7C8D3; border-radius: 8px; padding: 10px 16px; font-size: 13px; }
+  .btn-primary:disabled { opacity: .5; }
+
+  .alert-banner { background: #241A1A; border: 1px solid #4A2A2A; color: #F0A0A0; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 12px; }
+  .toast { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); background: #20222C; border: 1px solid #2A2C38; color: #E9E8EC; padding: 8px 16px; border-radius: 999px; font-size: 12px; z-index: 100; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ---------- Offline support: real service worker file ---------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+/* ---------- Data layer (localStorage — persists permanently on this device) ---------- */
+const PLATFORMS = {
+  facebook:  { label: "Facebook",  color: "#1877F2" },
+  youtube:   { label: "YouTube",   color: "#FF3B30" },
+  instagram: { label: "Instagram", color: "#E1306C" },
+};
+const STATUS = {
+  draft:     { label: "Draft",     color: "#8A8D9A" },
+  scheduled: { label: "Scheduled", color: "#6C7BFF" },
+  posted:    { label: "Posted",    color: "#38C793" },
+};
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+function loadJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) { return fallback; }
+}
+function saveJSON(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+  catch (e) { return false; }
+}
+
+function seedAccounts() {
+  const list = [];
+  for (let i = 1; i <= 30; i++) list.push({ id: uid(), platform: "facebook", name: `Facebook Page ${i}` });
+  for (let i = 1; i <= 20; i++) list.push({ id: uid(), platform: "youtube", name: `YouTube Channel ${i}` });
+  for (let i = 1; i <= 15; i++) list.push({ id: uid(), platform: "instagram", name: `Instagram Channel ${i}` });
+  return list;
+}
+
+let state = {
+  accounts: loadJSON("accounts", null) || seedAccounts(),
+  posts: loadJSON("posts", []),
+  tab: "overview",
+  platformFilter: "all",
+  statusFilter: "all",
+};
+if (!loadJSON("accounts", null)) saveJSON("accounts", state.accounts);
+
+function persistAccounts() { if (!saveJSON("accounts", state.accounts)) toast("Could not save — storage may be full."); }
+function persistPosts() { if (!saveJSON("posts", state.posts)) toast("Could not save — storage may be full."); }
+
+/* ---------- Toast ---------- */
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+/* ---------- Render ---------- */
+const app = document.getElementById('app');
+
+function render() {
+  app.innerHTML = `
+    ${renderHeader()}
+    <div class="content">${renderTab()}</div>
+    ${state.tab !== 'accounts' ? '' : ''}
+    ${renderBottomNav()}
+    ${state.tab === 'posts' ? '<button class="fab" id="fabAdd">+</button>' : ''}
+    ${state.tab === 'accounts' ? '<button class="fab" id="fabAddAcct">+</button>' : ''}
+  `;
+  bindEvents();
+}
+
+function counts() {
+  const c = { facebook: 0, youtube: 0, instagram: 0 };
+  state.accounts.forEach(a => c[a.platform] = (c[a.platform] || 0) + 1);
+  return c;
+}
+
+function renderHeader() {
+  const c = counts();
+  return `
+    <div class="header">
+      <div class="header-title display">Content Ops</div>
+      <div class="header-sub mono">${state.accounts.length} accounts · ${state.posts.length} posts logged</div>
+      <div class="pulse-row">
+        ${Object.entries(PLATFORMS).map(([k,p]) => `
+          <div class="pulse-item"><span class="dot" style="background:${p.color}"></span><span class="mono">${c[k]||0}</span></div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderBottomNav() {
+  const items = [['overview','Overview'],['posts','Posts'],['accounts','Accounts']];
+  return `<div class="bottom-nav">
+    ${items.map(([k,label]) => `<button class="nav-btn ${state.tab===k?'active':''}" data-tab="${k}">${label}</button>`).join('')}
+  </div>`;
+}
+
+function renderTab() {
+  if (state.tab === 'overview') return renderOverview();
+  if (state.tab === 'posts') return renderPosts();
+  if (state.tab === 'accounts') return renderAccounts();
+}
+
+function renderOverview() {
+  const c = counts();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in7 = new Date(today); in7.setDate(in7.getDate()+7);
+  const upcoming = state.posts.filter(p => p.status !== 'posted').filter(p => {
+    const d = new Date(p.date + 'T' + (p.time||'00:00'));
+    return d >= today && d <= in7;
+  }).sort((a,b) => new Date(a.date+'T'+(a.time||'00:00')) - new Date(b.date+'T'+(b.time||'00:00')));
+  const overdue = state.posts.filter(p => {
+    if (p.status === 'posted') return false;
+    const d = new Date(p.date + 'T' + (p.time||'23:59'));
+    return d < new Date();
+  });
+  const coveredIds = new Set();
+  state.posts.forEach(p => {
+    const d = new Date(p.date + 'T' + (p.time||'00:00'));
+    if (d >= today && d <= in7) coveredIds.add(p.accountId);
+  });
+  const total = state.accounts.length;
+  const pct = total ? Math.round((coveredIds.size/total)*100) : 0;
+  const barColor = pct > 60 ? '#38C793' : pct > 30 ? '#F0C24B' : '#F06060';
+
+  return `
+    <div class="stat-grid">
+      ${Object.entries(PLATFORMS).map(([k,p]) => `
+        <div class="stat-card">
+          <div class="stat-num" style="color:${p.color}">${c[k]||0}</div>
+          <div class="stat-label">${p.label}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span class="display" style="font-weight:600;">7-day coverage</span>
+        <span class="mono" style="color:#7A7D8C;font-size:11px;">${coveredIds.size}/${total} accounts</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+    </div>
+
+    ${overdue.length ? `
+      <div class="alert-banner">
+        <strong>${overdue.length} overdue post${overdue.length>1?'s':''}</strong>
+        ${overdue.slice(0,5).map(p => `<div class="row" style="border-color:#4A2A2A44;font-size:12px;">${escapeHtml(p.title||'Untitled')} — ${escapeHtml(accountName(p.accountId))}<span class="mono" style="margin-left:auto">${p.date}</span></div>`).join('')}
+      </div>
+    ` : ''}
+
+    <div class="card">
+      <div class="display" style="font-weight:600;margin-bottom:8px;">Next 7 days</div>
+      ${upcoming.length === 0 ? `<div style="color:#7A7D8C;font-size:13px;">Nothing scheduled this week.</div>` :
+        upcoming.slice(0,8).map(p => `
+          <div class="row">
+            <span class="dot" style="background:${PLATFORMS[p.platform].color}"></span>
+            <span style="flex:1;">${escapeHtml(p.title||'Untitled')}</span>
+            <span style="color:#7A7D8C;font-size:12px;">${escapeHtml(accountName(p.accountId))}</span>
+            <span class="mono" style="color:#9A9CAB;font-size:11px;">${p.date} ${p.time||''}</span>
+          </div>
+        `).join('')
+      }
+    </div>
+  `;
+}
+
+function renderPosts() {
+  let posts = state.posts
+    .filter(p => state.platformFilter==='all' || p.platform===state.platformFilter)
+    .filter(p => state.statusFilter==='all' || p.status===state.statusFilter)
+    .sort((a,b) => new Date(b.date+'T'+(b.time||'00:00')) - new Date(a.date+'T'+(a.time||'00:00')));
+
+  return `
+    <div class="filters">
+      <select class="filter-select" id="platformFilter">
+        <option value="all" ${state.platformFilter==='all'?'selected':''}>All platforms</option>
+        ${Object.entries(PLATFORMS).map(([k,v]) => `<option value="${k}" ${state.platformFilter===k?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+      <select class="filter-select" id="statusFilter">
+        <option value="all" ${state.statusFilter==='all'?'selected':''}>All statuses</option>
+        ${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${state.statusFilter===k?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+    </div>
+    ${posts.length === 0 ? `<div class="empty">No posts match this view yet. Tap + to add one.</div>` :
+      posts.map(p => `
+        <div class="post-item" data-id="${p.id}">
+          <div class="post-top">
+            <span class="dot" style="background:${PLATFORMS[p.platform].color}"></span>
+            <span class="post-title" style="flex:1;">${escapeHtml(p.title||'Untitled post')}</span>
+            ${(() => { const acc = state.accounts.find(a => a.id === p.accountId); return acc && acc.link ? `<a class="icon-btn" href="${escapeAttr(acc.link)}" target="_blank" rel="noopener" title="Open account to post">🔗</a>` : ''; })()}
+            <button class="icon-btn del-post" data-id="${p.id}">✕</button>
+          </div>
+          <div class="post-meta">${escapeHtml(accountName(p.accountId))} · ${p.date} ${p.time||''}</div>
+          ${p.notes ? `<div class="post-meta">${escapeHtml(p.notes)}</div>` : ''}
+          ${p.media && p.media.length ? `
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+              ${p.media.map(f => f.type.startsWith('image/')
+                ? `<img src="${f.dataUrl}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #23252F;" />`
+                : `<div style="width:48px;height:48px;border-radius:6px;border:1px solid #23252F;background:#20222C;display:flex;align-items:center;justify-content:center;font-size:16px;">${f.type.startsWith('video/') ? '🎬' : '🎵'}</div>`
+              ).join('')}
+            </div>
+          ` : ''}
+          <div class="post-bottom">
+            <select class="status-select post-status" data-id="${p.id}" style="color:${STATUS[p.status].color};border:1px solid ${STATUS[p.status].color}55;">
+              ${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${p.status===k?'selected':''}>${v.label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      `).join('')
+    }
+  `;
+}
+
+function renderAccounts() {
+  return Object.entries(PLATFORMS).map(([key,p]) => {
+    const list = state.accounts.filter(a => a.platform === key);
+    return `
+      <div class="acct-group-title"><span class="dot" style="background:${p.color}"></span>${p.label} <span class="mono" style="color:#7A7D8C;font-weight:400;font-size:12px;">(${list.length})</span></div>
+      <div class="acct-list">
+        ${list.length === 0 ? `<div style="color:#7A7D8C;font-size:13px;">No accounts yet.</div>` :
+          list.map(a => `
+            <div class="acct-item">
+              <span class="acct-name" data-id="${a.id}" style="flex:1;cursor:pointer;">${escapeHtml(a.name)}${a.link ? '' : ' <span style=\"color:#6A6D7C;font-size:11px;\">(no link set)</span>'}</span>
+              ${a.link ? `<a class="icon-btn" href="${escapeAttr(a.link)}" target="_blank" rel="noopener" title="Open">🔗</a>` : ''}
+              <button class="icon-btn edit-acct" data-id="${a.id}" title="Edit">✎</button>
+              <button class="icon-btn del-acct" data-id="${a.id}" title="Delete">✕</button>
+            </div>
+          `).join('')
+        }
+      </div>
+    `;
+  }).join('');
+}
+
+function accountName(id) {
+  return state.accounts.find(a => a.id === id)?.name || 'Unknown account';
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) {
+  return escapeHtml(s);
+}
+
+/* ---------- Modals ---------- */
+function openPostModal() {
+  const platforms = Object.entries(PLATFORMS);
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><div class="modal-title display">New post</div><button class="icon-btn" id="closeModal">✕</button></div>
+      <div class="field"><div class="field-label">Platform</div>
+        <select class="field-input" id="m_platform">${platforms.map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('')}</select>
+      </div>
+      <div class="field"><div class="field-label">Account</div>
+        <select class="field-input" id="m_account"></select>
+      </div>
+      <div class="field"><div class="field-label">Title / caption summary</div>
+        <input class="field-input" id="m_title" placeholder="e.g. Summer sale announcement" />
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;"><div class="field-label">Date</div><input type="date" class="field-input" id="m_date" /></div>
+        <div class="field" style="flex:1;"><div class="field-label">Time</div><input type="time" class="field-input" id="m_time" value="09:00" /></div>
+      </div>
+      <div class="field"><div class="field-label">Status</div>
+        <select class="field-input" id="m_status">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${k==='scheduled'?'selected':''}>${v.label}</option>`).join('')}</select>
+      </div>
+      <div class="field"><div class="field-label">Notes (optional)</div>
+        <textarea class="field-input" id="m_notes" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">Media (optional — images/video/audio)</div>
+        <input type="file" class="field-input" id="m_media" accept="image/*,video/*,audio/*" multiple />
+        <div id="m_media_preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+        <div class="field-label" style="margin-top:6px;color:#6A6D7C;">Stored on this device only. Keep files small — phone browser storage is limited (roughly 5-10MB total), so a couple of photos is fine but full videos may fail to save.</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" id="cancelModal">Cancel</button>
+        <button class="btn-primary" id="saveModal">Save post</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  let mediaFiles = [];
+
+  function renderMediaPreview() {
+    const box = backdrop.querySelector('#m_media_preview');
+    box.innerHTML = mediaFiles.map((f, i) => `
+      <div style="position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;background:#20222C;border:1px solid #2A2C38;display:flex;align-items:center;justify-content:center;">
+        ${f.type.startsWith('image/')
+          ? `<img src="${f.dataUrl}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<span style="font-size:10px;color:#9A9CAB;text-align:center;padding:4px;">${f.type.startsWith('video/') ? '🎬' : '🎵'}<br/>${escapeHtml(f.name.slice(0,10))}</span>`
+        }
+        <button type="button" data-i="${i}" class="rm-media" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);border:none;color:#fff;width:18px;height:18px;border-radius:999px;font-size:11px;line-height:1;">✕</button>
+      </div>
+    `).join('');
+    box.querySelectorAll('.rm-media').forEach(btn => {
+      btn.onclick = () => { mediaFiles.splice(Number(btn.dataset.i), 1); renderMediaPreview(); };
+    });
+  }
+
+  backdrop.querySelector('#m_media').addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      if (file.size > 3 * 1024 * 1024) {
+        toast(`"${file.name}" is over 3MB — skipped to protect storage.`);
+        continue;
+      }
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      mediaFiles.push({ name: file.name, type: file.type, dataUrl });
+    }
+    e.target.value = '';
+    renderMediaPreview();
+  });
+
+  function refreshAccountOptions() {
+    const platform = backdrop.querySelector('#m_platform').value;
+    const accSel = backdrop.querySelector('#m_account');
+    const opts = state.accounts.filter(a => a.platform === platform);
+    accSel.innerHTML = opts.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('') || `<option value="">No accounts on this platform</option>`;
+  }
+  refreshAccountOptions();
+  backdrop.querySelector('#m_platform').addEventListener('change', refreshAccountOptions);
+
+  const close = () => backdrop.remove();
+  backdrop.querySelector('#closeModal').onclick = close;
+  backdrop.querySelector('#cancelModal').onclick = close;
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+
+  backdrop.querySelector('#saveModal').onclick = () => {
+    const accountId = backdrop.querySelector('#m_account').value;
+    const date = backdrop.querySelector('#m_date').value;
+    if (!accountId || !date) { toast('Pick an account and a date.'); return; }
+    state.posts.push({
+      id: uid(),
+      platform: backdrop.querySelector('#m_platform').value,
+      accountId,
+      title: backdrop.querySelector('#m_title').value.trim(),
+      date,
+      time: backdrop.querySelector('#m_time').value,
+      status: backdrop.querySelector('#m_status').value,
+      notes: backdrop.querySelector('#m_notes').value.trim(),
+      media: mediaFiles,
+    });
+    persistPosts();
+    close();
+    render();
+  };
+}
+
+function openAccountModal(existing) {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><div class="modal-title display">${existing ? 'Edit account' : 'New account'}</div><button class="icon-btn" id="closeModal">✕</button></div>
+      <div class="field"><div class="field-label">Platform</div>
+        <select class="field-input" id="a_platform" ${existing ? 'disabled' : ''}>${Object.entries(PLATFORMS).map(([k,v]) => `<option value="${k}" ${existing && existing.platform===k ? 'selected' : ''}>${v.label}</option>`).join('')}</select>
+      </div>
+      <div class="field"><div class="field-label">Name</div>
+        <input class="field-input" id="a_name" placeholder="e.g. Downtown Cafe Page" value="${existing ? escapeAttr(existing.name) : ''}" />
+      </div>
+      <div class="field"><div class="field-label">Channel / page link (optional)</div>
+        <input class="field-input" id="a_link" placeholder="https://facebook.com/yourpage" value="${existing && existing.link ? escapeAttr(existing.link) : ''}" />
+        <div class="field-label" style="margin-top:6px;color:#6A6D7C;">Paste the page/channel/profile URL. A one-tap "Open" button will jump straight there so you can post manually — this app can't publish for you automatically.</div>
+      </div>
+      <div class="btn-row">
+        ${existing ? `<button class="btn-secondary" id="deleteAcct" style="margin-right:auto;color:#F0A0A0;border-color:#4A2A2A;">Delete</button>` : ''}
+        <button class="btn-secondary" id="cancelModal">Cancel</button>
+        <button class="btn-primary" id="saveModal">${existing ? 'Save changes' : 'Save account'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+  const close = () => backdrop.remove();
+  backdrop.querySelector('#closeModal').onclick = close;
+  backdrop.querySelector('#cancelModal').onclick = close;
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+  const delBtn = backdrop.querySelector('#deleteAcct');
+  if (delBtn) delBtn.onclick = () => {
+    state.accounts = state.accounts.filter(a => a.id !== existing.id);
+    state.posts = state.posts.filter(p => p.accountId !== existing.id);
+    persistAccounts(); persistPosts(); close(); render();
+  };
+  backdrop.querySelector('#saveModal').onclick = () => {
+    const name = backdrop.querySelector('#a_name').value.trim();
+    if (!name) { toast('Give the account a name.'); return; }
+    let link = backdrop.querySelector('#a_link').value.trim();
+    if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
+    if (existing) {
+      existing.name = name;
+      existing.link = link;
+    } else {
+      state.accounts.push({ id: uid(), platform: backdrop.querySelector('#a_platform').value, name, link });
+    }
+    persistAccounts();
+    close();
+    render();
+  };
+}
+
+/* ---------- Event binding ---------- */
+function bindEvents() {
+  app.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.onclick = () => { state.tab = btn.dataset.tab; render(); };
+  });
+  const fab = document.getElementById('fabAdd');
+  if (fab) fab.onclick = openPostModal;
+  const fabAcct = document.getElementById('fabAddAcct');
+  if (fabAcct) fabAcct.onclick = openAccountModal;
+
+  const pf = document.getElementById('platformFilter');
+  if (pf) pf.onchange = () => { state.platformFilter = pf.value; render(); };
+  const sf = document.getElementById('statusFilter');
+  if (sf) sf.onchange = () => { state.statusFilter = sf.value; render(); };
+
+  app.querySelectorAll('.del-post').forEach(btn => {
+    btn.onclick = () => { state.posts = state.posts.filter(p => p.id !== btn.dataset.id); persistPosts(); render(); };
+  });
+  app.querySelectorAll('.del-acct').forEach(btn => {
+    btn.onclick = () => {
+      state.accounts = state.accounts.filter(a => a.id !== btn.dataset.id);
+      state.posts = state.posts.filter(p => p.accountId !== btn.dataset.id);
+      persistAccounts(); persistPosts(); render();
+    };
+  });
+  app.querySelectorAll('.edit-acct, .acct-name').forEach(el => {
+    el.onclick = () => {
+      const acc = state.accounts.find(a => a.id === el.dataset.id);
+      if (acc) openAccountModal(acc);
+    };
+  });
+  app.querySelectorAll('.post-status').forEach(sel => {
+    sel.onchange = () => {
+      const post = state.posts.find(p => p.id === sel.dataset.id);
+      if (post) { post.status = sel.value; persistPosts(); render(); }
+    };
+  });
+}
+
+render();
+</script>
+</body>
+</html>
